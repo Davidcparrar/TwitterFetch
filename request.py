@@ -58,13 +58,14 @@ def get_attr(tweets):
 	source = []
 	location = []
 	coordinates = []
+	id_ = []
 
 	for index, item in enumerate(tweets):
 		source.append(item["source"])
+		id_.append(item["id"])
 		location.append(item["user"]["location"])
 		if item["geo"] is not None:
 			coordinates.append(item["geo"]["coordinates"])
 		else: 
 			coordinates.append(None)
-	return source, location, coordinates
-	
+	return source, location, coordinates, id_
