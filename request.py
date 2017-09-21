@@ -15,10 +15,12 @@ https://dev.twitter.com/rest/reference
 import base64
 import json
 import urllib2
+import time
+import datetime
 
-def request(consumer_key, consumer_secret, url_request):
+def connect(consumer_key, consumer_secret):
 	"""
-	Returns a json object from twitter according to url_request
+	Returns access token from the twitter API
 	:param consumer_key: consumer key for the twitter API
 	:param consumer_secret: consumer secret for the twitter API
 	:return list_data: json object with the tweets info
@@ -39,7 +41,20 @@ def request(consumer_key, consumer_secret, url_request):
 	token_data = json.loads(token_contents)
 	access_token = token_data["access_token"]
 
+	return access_token
+
+def request(consumer_key, consumer_secret, url_request):
+	"""
+	Returns a json object from twitter according to url_request
+	:param consumer_key: consumer key for the twitter API
+	:param consumer_secret: consumer secret for the twitter API
+	:param url_request: type of request to process
+	:return list_data: json object with the tweets info
+	"""
 	### Use the Access Token to make an API request
+
+	access_token = connect(consumer_key, consumer_secret)
+
 	list_request = urllib2.Request(url_request)
 	list_request.add_header("Authorization", "Bearer %s" % access_token)
 
@@ -69,3 +84,34 @@ def get_attr(tweets):
 		else: 
 			coordinates.append(None)
 	return source, location, coordinates, id_
+
+def get_time_limit(consumer_key, consumer_secret):
+	"""
+	Returns a the limit, remaining, and seconds until the API request limit
+	:return limit: request limit associated with the consumer data 
+	:return remaining: requests remaining associated with the consumer data 
+	:return dif: seconds between current time and next reset of the API limit 
+	"""
+	req = request(consumer_key, consumer_secret, "https://api.twitter.com/1.1/application/rate_limit_status.json?resources=statuses")
+
+	limit = req["resources"]["statuses"]["/statuses/lookup"]["limit"]
+	remaining = req["resources"]["statuses"]["/statuses/lookup"]["remaining"]
+	reset = req["resources"]["statuses"]["/statuses/lookup"]["reset"] 
+
+	dif = reset - time.time()
+	current_time = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
+	reset_time = datetime.datetime.fromtimestamp(reset).strftime('%Y-%m-%d %H:%M:%S')
+	
+	print("\n")
+	print("***************************************")
+	print("Current time: " + str(current_time))
+	print("Reset time: " + str(reset_time))
+	print("seconds until next reset: " + str(dif))
+	print("Remaining requests: " + str(remaining))
+	print("***************************************")
+	print("\n")
+
+	return {'time': dif, 'limit' : limit, 'remaining' : remaining}  
+
+
+
